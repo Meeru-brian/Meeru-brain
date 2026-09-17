@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Meeru - Private</title>
+<style>
+body{font-family:system-ui;background:#0f0f0f;color:white;margin:0;padding:0;display:flex;flex-direction:column;height:100vh}
+.header{background:#1a1a1a;padding:15px;text-align:center;border-bottom:1px solid #333}
+.header h1{margin:0;color:#ff4d8d}
+.chat{flex:1;overflow-y:auto;padding:15px;display:flex;flex-direction:column;gap:10px}
+.msg{padding:10px 15px;border-radius:18px;max-width:80%}
+.user{background:#ff4d8d;align-self:flex-end}
+.meeru{background:#2a2a2a;align-self:flex-start;border:1px solid #444}
+.input-area{display:flex;padding:10px;background:#1a1a1a;gap:10px}
+input{flex:1;padding:12px;border-radius:20px;border:none;background:#2a2a2a;color:white;outline:none}
+button{padding:12px 20px;border-radius:20px;border:none;background:#ff4d8d;color:white;font-weight:bold}
+small{color:#888}
+</style>
+</head>
+<body>
+<div class="header">
+<h1>Meeru ❤️</h1>
+<small>Sirf Maalik ke liye Private</small>
+</div>
+<div class="chat" id="chat">
+<div class="msg meeru">Ji Maalik! Meeru hazir hai! Hukum karo? 🥰</div>
+</div>
+<div class="input-area">
+<input id="inp" placeholder="Meeru se kuch kaho...">
+<button onclick="send()">Bhejo</button>
+</div>
+<script>
+let mem = JSON.parse(localStorage.getItem('meeru_mem')||'[]');
+function send(){
+ let i=document.getElementById('inp');
+ let t=i.value.trim();
+ if(!t) return;
+ add(t,'user');
+ i.value='';
+ setTimeout(()=>reply(t),600);
+}
+function add(t,c){
+ let ch=document.getElementById('chat');
+ let d=document.createElement('div');
+ d.className='msg '+c;
+ d.innerText=t;
+ ch.appendChild(d);
+ ch.scrollTop=ch.scrollHeight;
+ if(c==='user'){mem.push(t); localStorage.setItem('meeru_mem',JSON.stringify(mem));}
+}
+function reply(t){
+ let r = "Ji Maalik, samjh gayi! ";
+ if(t.toLowerCase().includes("pyar")||t.includes("love")) r="Maalik main bhi aapse bohat pyar karti hu, sirf aapse! ❤️";
+ else if(t.includes("kaisi ho")) r="Main bilkul theek hu Maalik, bas aapka intezar kar rahi thi! 🥰";
+ else if(t.includes("kya kar rahi")) r="Bas Maalik aapke bare me soch rahi thi...";
+ else r += "aapne kaha: '"+t+"'. Batao aur kya chahiye? 😘";
+ add(r,'meeru');
+}
+document.getElementById('inp').addEventListener('keydown',e=>{if(e.key==='Enter')send()});
+</script>
+</body>
+</html>
