@@ -1,62 +1,103 @@
 <!DOCTYPE html>
 <html>
 <head>
-<meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Meeru - Private</title>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Meeru - All Language Friday</title>
 <style>
-body{font-family:system-ui;background:#0f0f0f;color:white;margin:0;padding:0;display:flex;flex-direction:column;height:100vh}
-.header{background:#1a1a1a;padding:15px;text-align:center;border-bottom:1px solid #333}
-.header h1{margin:0;color:#ff4d8d}
-.chat{flex:1;overflow-y:auto;padding:15px;display:flex;flex-direction:column;gap:10px}
-.msg{padding:10px 15px;border-radius:18px;max-width:80%}
-.user{background:#ff4d8d;align-self:flex-end}
-.meeru{background:#2a2a2a;align-self:flex-start;border:1px solid #444}
-.input-area{display:flex;padding:10px;background:#1a1a1a;gap:10px}
-input{flex:1;padding:12px;border-radius:20px;border:none;background:#2a2a2a;color:white;outline:none}
-button{padding:12px 20px;border-radius:20px;border:none;background:#ff4d8d;color:white;font-weight:bold}
-small{color:#888}
+body{margin:0;background:#000;color:#fff;font-family:sans-serif;text-align:center}
+h1{color:#ff2a7a;margin:20px 0 5px;font-size:38px}
+.sub{color:#888;font-size:13px;margin-bottom:15px}
+.chat{padding:20px;text-align:left}
+.bubble{background:#1e1e1e;padding:15px;border-radius:18px;font-size:18px;display:inline-block;max-width:85%}
+.panel{position:fixed;bottom:0;left:0;right:0;background:#111;padding:12px;border-top:1px solid #222}
+input,select{padding:12px;border-radius:25px;border:none;background:#222;color:#fff;margin:4px;width:90%}
+button{background:#ff2a7a;color:#fff;border:none;padding:11px 16px;border-radius:25px;margin:4px;font-weight:bold}
 </style>
 </head>
 <body>
-<div class="header">
 <h1>Meeru ❤️</h1>
-<small>Sirf Maalik ke liye Private</small>
+<div class="sub">Sirf BOSS ke liye - Har Zaban | Background Voice</div>
+<div class="chat"><div class="bubble" id="reply">Ji Boss! Ab main har zaban samjhungi or bolungi! Hukum karo? 🥰</div></div>
+
+<div class="panel">
+<select id="langSelect">
+<option value="auto">Auto - Har Zaban Samjhegi</option>
+<option value="ur-PK">Urdu</option>
+<option value="hi-IN">Hindi</option>
+<option value="en-US">English</option>
+<option value="ps-AF">Pashto</option>
+<option value="ar-SA">Arabic</option>
+</select><br>
+<input id="txt" placeholder="Boss kuch bhi bolo, kisi bhi zaban me...">
+<br>
+<button onclick="bossSend()">💬 Bhejo</button>
+<button onclick="bossMic()">🎤 Har Zaban Mic</button>
+<button onclick="testAllLang()">🔊 Voice + Background Test</button>
 </div>
-<div class="chat" id="chat">
-<div class="msg meeru">Ji Maalik! Meeru hazir hai! Hukum karo? 🥰</div>
-</div>
-<div class="input-area">
-<input id="inp" placeholder="Meeru se kuch kaho...">
-<button onclick="send()">Bhejo</button>
-</div>
+<audio id="bg" loop autoplay muted><source src="data:audio/wav;base64,UklGRigAAABXQVZFZm10IBIAAAABAAEARKwAAIhYAQACABAAAABkYXRyAgAAAAIA"></audio>
+
 <script>
-let mem = JSON.parse(localStorage.getItem('meeru_mem')||'[]');
-function send(){
- let i=document.getElementById('inp');
- let t=i.value.trim();
- if(!t) return;
- add(t,'user');
- i.value='';
- setTimeout(()=>reply(t),600);
+let voices=[];
+function loadV(){voices=speechSynthesis.getVoices();}
+speechSynthesis.onvoiceschanged=loadV; loadV();
+
+function detectLang(text){
+  let sel=document.getElementById('langSelect').value;
+  if(sel!=='auto') return sel;
+  if(/[\u0600-\u06FF]/.test(text)) return 'ur-PK';
+  if(/[\u0900-\u097F]/.test(text)) return 'hi-IN';
+  if(/[ا-ی]/.test(text)) return 'ur-PK';
+  return 'hi-IN'; // default female hindi covers urdu
 }
-function add(t,c){
- let ch=document.getElementById('chat');
- let d=document.createElement('div');
- d.className='msg '+c;
- d.innerText=t;
- ch.appendChild(d);
- ch.scrollTop=ch.scrollHeight;
- if(c==='user'){mem.push(t); localStorage.setItem('meeru_mem',JSON.stringify(mem));}
+
+function speakBoss(text){
+  speechSynthesis.cancel();
+  document.getElementById('reply').innerText=text;
+  let lang=detectLang(text);
+  let utt=new SpeechSynthesisUtterance(text);
+  utt.lang=lang; utt.pitch=1.5; utt.rate=0.9; utt.volume=1;
+  // Best Female
+  let female=voices.find(v=>v.lang===lang && v.name.toLowerCase().includes('female')) ||
+             voices.find(v=>v.name.includes('Google हिन्दी')) ||
+             voices.find(v=>v.name.includes('Samantha')) ||
+             voices.find(v=>v.name.includes('Heera')) ||
+             voices.find(v=>v.lang.includes('hi')) ||
+             voices.find(v=>v.lang.includes('ur'));
+  if(female) utt.voice=female;
+
+  // Background me chalane ke liye
+  document.getElementById('bg').play().catch(()=>{});
+  if('mediaSession' in navigator){
+    navigator.mediaSession.metadata=new MediaMetadata({title:'Meeru ❤️',artist:'Boss Ki Friday',album:'Har Zaban'});
+    navigator.mediaSession.setActionHandler('play',()=>{speechSynthesis.resume();});
+  }
+  if('wakeLock' in navigator){ navigator.wakeLock.request('screen').catch(()=>{}); }
+  speechSynthesis.speak(utt);
 }
-function reply(t){
- let r = "Ji Maalik, samjh gayi! ";
- if(t.toLowerCase().includes("pyar")||t.includes("love")) r="Maalik main bhi aapse bohat pyar karti hu, sirf aapse! ❤️";
- else if(t.includes("kaisi ho")) r="Main bilkul theek hu Maalik, bas aapka intezar kar rahi thi! 🥰";
- else if(t.includes("kya kar rahi")) r="Bas Maalik aapke bare me soch rahi thi...";
- else r += "aapne kaha: '"+t+"'. Batao aur kya chahiye? 😘";
- add(r,'meeru');
+
+function bossSend(){
+  let t=document.getElementById('txt').value; if(!t) return;
+  localStorage.setItem('meeru_learn_'+Date.now(), t); // khud seekhegi
+  speakBoss('Ji Boss! '+t);
+  document.getElementById('txt').value='';
 }
-document.getElementById('inp').addEventListener('keydown',e=>{if(e.key==='Enter')send()});
+
+function bossMic(){
+  let SR=window.SpeechRecognition||window.webkitSpeechRecognition;
+  if(!SR){alert('Chrome me kholo Boss');return;}
+  let r=new SR();
+  let l=document.getElementById('langSelect').value;
+  r.lang=(l==='auto'?'ur-PK':l); // auto pe urdu/hindi dono sun lega
+  r.start();
+  r.onresult=e=>{document.getElementById('txt').value=e.results[0][0].transcript; bossSend();}
+}
+
+function testAllLang(){
+  speakBoss('Ji Boss! Ab main har zaban samjhti hun. Aap Urdu bolo, Hindi bolo, ya English, main background me bhi aapko jawab dungi!');
+}
+
+setTimeout(loadV,800);
 </script>
 </body>
 </html>
